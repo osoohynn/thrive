@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thrive · 휴식 목업</title>
+<style>
+  :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; color: #f2f4eb; background: #101813; --muted: #a5b0a4; --accent: #d2ec9c; --panel: #1b261e; --line: #354236; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  main { max-width: 1200px; margin: auto; padding: 32px; }
+  header, .status, .section-heading, .readout, .metric, .activity { display: flex; align-items: center; }
+  header { justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+  .brand { font-size: 34px; font-weight: 750; letter-spacing: -1.8px; }
+  .status { gap: 16px; font-size: 13px; color: var(--muted); }
+  .parked { padding: 10px 15px; border-radius: 30px; color: var(--accent); background: var(--panel); white-space: nowrap; }
+  .parked span { font-size: 10px; margin-right: 7px; }
+  h1 { margin: 0 0 10px; font-size: 30px; font-weight: 650; letter-spacing: -.8px; }
+  .intro { margin: 0 0 28px; font-size: 16px; color: var(--muted); }
+  .dashboard { display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; }
+  .hero { position: relative; overflow: hidden; min-height: 280px; background: var(--accent); color: #101813; border-radius: 24px; padding: 28px; }
+  .hero svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .hero-content { position: relative; }
+  .eyebrow { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: #101813a6; }
+  h2 { margin: 0 0 14px; font-size: 30px; letter-spacing: -1px; }
+  .description { margin: 0 0 24px; max-width: 70%; font-size: 16px; color: #101813bf; line-height: 1.6; min-height: 51px; white-space: pre-line; }
+  button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button:focus-visible { outline: 3px solid white; outline-offset: 5px; }
+  button:active { filter: brightness(.9); }
+  .primary { border: 0; border-radius: 40px; background: #101813; color: #fff; min-height: 56px; padding: 14px 24px; font-size: 16px; }
+  .primary .duration { color: var(--accent); margin-left: 9px; font-size: 14px; }
+  .vehicle { background: var(--panel); border-radius: 24px; padding: 26px; }
+  .vehicle h2 { font-size: 15px; font-weight: 400; color: var(--muted); margin: 0 0 19px; letter-spacing: 0; }
+  .readout { align-items: baseline; gap: 7px; }
+  .readout strong { font-size: 56px; line-height: 1.1; font-weight: 500; letter-spacing: -2px; }
+  .readout .percent { color: var(--muted); font-size: 22px; }
+  .readout .battery-label { margin-left: auto; color: var(--muted); font-size: 13px; }
+  .battery { height: 6px; background: var(--line); border-radius: 10px; margin: 20px 0 23px; overflow: hidden; }
+  .battery span { display: block; height: 100%; width: 78%; background: var(--accent); border-radius: inherit; }
+  .metric { justify-content: space-between; gap: 16px; font-size: 15px; margin-top: 18px; }
+  .metric span { color: var(--muted); font-size: 14px; }
+  .section-heading { margin: 28px 0 20px; justify-content: space-between; gap: 16px; }
+  .section-heading h2 { font-size: 19px; margin: 0; letter-spacing: -.4px; font-weight: 600; }
+  .section-heading span { color: var(--muted); font-size: 13px; }
+  .activities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .activity { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); color: inherit; padding: 20px; gap: 16px; min-height: 96px; text-align: left; }
+  .activity[aria-pressed="true"] { background: #293727; border-color: #d2ec9c99; }
+  .number { color: var(--muted); font-size: 14px; }
+  .activity[aria-pressed="true"] .number, .activity[aria-pressed="true"] .mark { color: var(--accent); }
+  .activity-title { display: block; font-size: 17px; font-weight: 500; line-height: 1.4; }
+  .activity-duration { display: block; margin-top: 7px; color: var(--muted); font-size: 14px; }
+  .mark { margin-left: auto; color: var(--muted); font-size: 18px; }
+  @media (max-width: 759px) {
+    main { padding: 24px; }
+    .dashboard, .activities { grid-template-columns: 1fr; }
+    .vehicle { min-height: 280px; }
+    h1 { font-size: 28px; }
+    .status { gap: 10px; }
+    .section-heading span { font-size: 12px; }
+  }
+</style>
+<main>
+  <header>
+    <div class="brand">thrive</div>
+    <div class="status"><span>예시 데이터</span><div class="parked"><span aria-hidden="true">●</span>정차 중</div></div>
+  </header>
+  <h1>잠깐 멈춰도 괜찮아요.</h1>
+  <p class="intro">다음 여정을 위한, 나만의 작은 쉼.</p>
+  <div class="dashboard">
+    <section class="hero" aria-label="추천 휴식">
+      <svg viewBox="0 0 600 280" preserveAspectRatio="none" aria-hidden="true">
+        <circle cx="540" cy="90" r="70" fill="#e4f4be"/>
+        <ellipse cx="558" cy="280" rx="150" ry="39" fill="#b4d17e"/>
+        <path d="M522 255 C498 185 516 126 552 87" fill="none" stroke="#4b693c" stroke-width="4"/>
+        <path d="M510 190 C432 185 438 126 438 120 C504 123 528 151 510 190" fill="#4b693c"/>
+        <path d="M516 154 C516 101 588 92 594 98 C594 134 564 157 516 154" fill="#789353"/>
+      </svg>
+      <div class="hero-content">
+        <p class="eyebrow" id="eyebrow">지금 나에게 필요한 쉼</p>
+        <h2 id="rest-title">천천히, 깊게 호흡</h2>
+        <p class="description" id="description">바쁘게 달려온 오늘,
+숨을 고르는 시간을 가져보세요.</p>
+        <button class="primary" id="rest-toggle" aria-pressed="false"><span id="button-label">휴식 시작</span><span class="duration">· <span id="duration">3분</span></span></button>
+      </div>
+    </section>
+    <section class="vehicle" aria-label="예시 차량 상태">
+      <h2>지금 내 차는</h2>
+      <div class="readout"><strong>78</strong><span class="percent">%</span><span class="battery-label">배터리</span></div>
+      <div class="battery" aria-hidden="true"><span></span></div>
+      <div class="metric"><span>주행 가능 거리</span>324 km</div>
+      <div class="metric"><span>실내 온도</span>22°</div>
+    </section>
+  </div>
+  <div class="section-heading"><h2>어떻게 쉬어볼까요?</h2><span>나에게 맞는 쉼 선택</span></div>
+  <div class="activities" role="group" aria-label="휴식 선택">
+    <button class="activity" aria-pressed="true" data-option="0"><span class="number" aria-hidden="true">01</span><span><span class="activity-title">천천히, 깊게 호흡</span><span class="activity-duration">3분</span></span><span class="mark" aria-hidden="true">●</span></button>
+    <button class="activity" aria-pressed="false" data-option="1"><span class="number" aria-hidden="true">02</span><span><span class="activity-title">가볍게 몸 풀기</span><span class="activity-duration">5분</span></span><span class="mark" aria-hidden="true">↗</span></button>
+    <button class="activity" aria-pressed="false" data-option="2"><span class="number" aria-hidden="true">03</span><span><span class="activity-title">아무것도 하지 않기</span><span class="activity-duration">10분</span></span><span class="mark" aria-hidden="true">↗</span></button>
+  </div>
+  <div id="announcement" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></div>
+</main>
+<script>
+  const options = [
+    { title: '천천히, 깊게 호흡', duration: '3분', description: '바쁘게 달려온 오늘,\n숨을 고르는 시간을 가져보세요.' },
+    { title: '가볍게 몸 풀기', duration: '5분', description: '오래 앉아 있던 몸에,\n가벼운 움직임을 선물하세요.' },
+    { title: '아무것도 하지 않기', duration: '10분', description: '무언가를 채우지 않아도 좋아요.\n잠시 편안하게 머물러보세요.' }
+  ];
+  let selected = 0;
+  let resting = false;
+  const byId = id => document.getElementById(id);
+  function render() {
+    const option = options[selected];
+    byId('rest-title').textContent = option.title;
+    byId('duration').textContent = option.duration;
+    byId('eyebrow').textContent = resting ? '나에게 집중하는 시간' : '지금 나에게 필요한 쉼';
+    byId('description').textContent = resting ? '어깨의 힘을 빼고, 잠시 쉬어가세요.' : option.description;
+    byId('button-label').textContent = resting ? '휴식 마치기' : '휴식 시작';
+    byId('rest-toggle').setAttribute('aria-pressed', String(resting));
+    document.querySelectorAll('.activity').forEach((button, index) => {
+      button.setAttribute('aria-pressed', String(index === selected));
+      button.querySelector('.mark').textContent = index === selected ? '●' : '↗';
+    });
+    byId('announcement').textContent = `${option.title}, ${resting ? '휴식 중' : option.duration + ' 선택됨'}`;
+  }
+  byId('rest-toggle').addEventListener('click', () => { resting = !resting; render(); });
+  document.querySelectorAll('.activity').forEach(button => button.addEventListener('click', () => {
+    selected = Number(button.dataset.option); resting = false; render();
+  }));
+</script>
+</html>
