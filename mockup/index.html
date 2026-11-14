@@ -3,59 +3,64 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thrive · 휴식 목업</title>
+<link rel="stylesheet" href="tokens.css">
 <style>
-  :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; color: #f2f4eb; background: #101813; --muted: #a5b0a4; --accent: #d2ec9c; --panel: #1b261e; --line: #354236; }
   * { box-sizing: border-box; }
-  body { margin: 0; }
-  main { max-width: 1200px; margin: auto; padding: 32px; }
+  body { margin: 0; min-height: 100svh; isolation: isolate; }
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      linear-gradient(var(--color-scrim), var(--color-scrim)),
+      url("../app/src/main/res/drawable-nodpi/aurora_grain.png") center / cover no-repeat,
+      url("../app/src/main/res/drawable-nodpi/aurora_wave.png") 85% 80% / 124.61% 124.68% no-repeat,
+      var(--color-brand);
+  }
+  main { max-width: calc(var(--content-max) + 2 * var(--space-3xl)); margin: auto; padding: var(--space-3xl); }
   header, .status, .section-heading, .readout, .metric, .activity { display: flex; align-items: center; }
-  header { justify-content: space-between; gap: 16px; margin-bottom: 30px; }
-  .brand { font-size: 34px; font-weight: 750; letter-spacing: -1.8px; }
-  .status { gap: 16px; font-size: 13px; color: var(--muted); }
-  .parked { padding: 10px 15px; border-radius: 30px; color: var(--accent); background: var(--panel); white-space: nowrap; }
-  .parked span { font-size: 10px; margin-right: 7px; }
-  h1 { margin: 0 0 10px; font-size: 30px; font-weight: 650; letter-spacing: -.8px; }
-  .intro { margin: 0 0 28px; font-size: 16px; color: var(--muted); }
-  .dashboard { display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; }
-  .hero { position: relative; overflow: hidden; min-height: 280px; background: var(--accent); color: #101813; border-radius: 24px; padding: 28px; }
-  .hero svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .hero-content { position: relative; }
-  .eyebrow { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: #101813a6; }
-  h2 { margin: 0 0 14px; font-size: 30px; letter-spacing: -1px; }
-  .description { margin: 0 0 24px; max-width: 70%; font-size: 16px; color: #101813bf; line-height: 1.6; min-height: 51px; white-space: pre-line; }
+  header { justify-content: space-between; flex-wrap: wrap; gap: var(--space-xl); margin-bottom: var(--space-section); }
+  .brand { font: var(--type-headline-medium); font-weight: 700; }
+  .status { gap: var(--space-lg); font: var(--type-body-small); color: var(--color-text-secondary); }
+  .parked { padding: var(--space-md) var(--space-lg); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-pill); color: var(--color-accent); background: var(--color-glass); white-space: nowrap; font: var(--type-label-small); }
+  .parked span { margin-right: var(--space-xs); }
+  h1 { margin: 0 0 var(--space-sm); font: var(--type-headline); }
+  .intro { margin: 0 0 var(--space-section); font: var(--type-body); color: var(--color-text-secondary); }
+  .dashboard { display: grid; grid-template-columns: 1.7fr 1fr; gap: var(--space-xl); }
+  .hero, .vehicle { min-width: 0; min-height: var(--card-min-height); background: var(--color-reading-surface); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-panel); padding: var(--space-2xl); }
+  .eyebrow { margin: 0 0 var(--space-md); font: var(--type-label-small); color: var(--color-accent); }
+  h2 { margin: 0 0 var(--space-md); font: var(--type-headline-medium); }
+  .description { margin: 0 0 var(--space-lg); font: var(--type-body); color: var(--color-text-secondary); min-height: 80px; white-space: pre-line; }
   button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  button:focus-visible { outline: 3px solid white; outline-offset: 5px; }
-  button:active { filter: brightness(.9); }
-  .primary { border: 0; border-radius: 40px; background: #101813; color: #fff; min-height: 56px; padding: 14px 24px; font-size: 16px; }
-  .primary .duration { color: var(--accent); margin-left: 9px; font-size: 14px; }
-  .vehicle { background: var(--panel); border-radius: 24px; padding: 26px; }
-  .vehicle h2 { font-size: 15px; font-weight: 400; color: var(--muted); margin: 0 0 19px; letter-spacing: 0; }
-  .readout { align-items: baseline; gap: 7px; }
-  .readout strong { font-size: 56px; line-height: 1.1; font-weight: 500; letter-spacing: -2px; }
-  .readout .percent { color: var(--muted); font-size: 22px; }
-  .readout .battery-label { margin-left: auto; color: var(--muted); font-size: 13px; }
-  .battery { height: 6px; background: var(--line); border-radius: 10px; margin: 20px 0 23px; overflow: hidden; }
-  .battery span { display: block; height: 100%; width: 78%; background: var(--accent); border-radius: inherit; }
-  .metric { justify-content: space-between; gap: 16px; font-size: 15px; margin-top: 18px; }
-  .metric span { color: var(--muted); font-size: 14px; }
-  .section-heading { margin: 28px 0 20px; justify-content: space-between; gap: 16px; }
-  .section-heading h2 { font-size: 19px; margin: 0; letter-spacing: -.4px; font-weight: 600; }
-  .section-heading span { color: var(--muted); font-size: 13px; }
-  .activities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .activity { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); color: inherit; padding: 20px; gap: 16px; min-height: 96px; text-align: left; }
-  .activity[aria-pressed="true"] { background: #293727; border-color: #d2ec9c99; }
-  .number { color: var(--muted); font-size: 14px; }
-  .activity[aria-pressed="true"] .number, .activity[aria-pressed="true"] .mark { color: var(--accent); }
-  .activity-title { display: block; font-size: 17px; font-weight: 500; line-height: 1.4; }
-  .activity-duration { display: block; margin-top: 7px; color: var(--muted); font-size: 14px; }
-  .mark { margin-left: auto; color: var(--muted); font-size: 18px; }
+  button:focus-visible { outline: var(--focus-width) solid var(--color-text); outline-offset: var(--space-xs); }
+  button:active { filter: brightness(.92); }
+  .primary { border: 0; border-radius: var(--radius-pill); background: var(--color-text); color: var(--color-background); min-height: var(--touch-target); padding: var(--space-md) var(--space-2xl); font: var(--type-label); }
+  .primary:focus-visible { outline-color: var(--color-accent); }
+  .primary .duration { display: inline-block; color: var(--color-brand); margin-left: var(--space-sm); font: var(--type-label-small); }
+  .vehicle h2 { font: var(--type-title-small); color: var(--color-text-secondary); margin: 0 0 var(--space-lg); }
+  .readout { align-items: baseline; flex-wrap: wrap; gap: var(--space-sm); }
+  .readout strong { font: var(--type-display); font-variant-numeric: tabular-nums; }
+  .readout .percent { color: var(--color-text-secondary); font: var(--type-unit); }
+  .readout .battery-label { margin-left: auto; color: var(--color-text-secondary); font: var(--type-body-small); }
+  .battery { height: var(--progress-height); background: var(--color-border); border-radius: var(--radius-pill); margin: var(--space-lg) 0; overflow: hidden; }
+  .battery span { display: block; height: 100%; width: 78%; background: var(--color-accent); border-radius: inherit; }
+  .metric { justify-content: space-between; flex-wrap: wrap; gap: var(--space-lg); font: var(--type-label-small); margin-top: var(--space-lg); }
+  .metric span { color: var(--color-text-secondary); font: var(--type-body-small); }
+  .section-heading { margin: var(--space-2xl) 0 var(--space-lg); flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); }
+  .section-heading h2 { font: var(--type-title); margin: 0; }
+  .section-heading span { color: var(--color-text-secondary); font: var(--type-body-small); }
+  .activities { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg); }
+  .activity { border: var(--border-width) solid var(--color-border); border-radius: var(--radius-panel); background: var(--color-glass); color: inherit; padding: var(--space-xl); gap: var(--space-lg); min-height: var(--activity-min-height); text-align: left; }
+  .activity[aria-pressed="true"] { background: var(--color-glass-selected); border-color: var(--color-border-strong); }
+  .number { color: var(--color-text-secondary); font: var(--type-label-small); }
+  .activity[aria-pressed="true"] .number, .activity[aria-pressed="true"] .mark { color: var(--color-accent); }
+  .activity-title { display: block; font: var(--type-title-small); }
+  .activity-duration { display: block; margin-top: var(--space-xs); color: var(--color-text-secondary); font: var(--type-body-small); }
+  .mark { margin-left: auto; color: var(--color-text-secondary); font: var(--type-title); }
   @media (max-width: 759px) {
-    main { padding: 24px; }
+    main { padding: var(--space-2xl); }
+    header { gap: var(--space-sm); }
     .dashboard, .activities { grid-template-columns: 1fr; }
-    .vehicle { min-height: 280px; }
-    h1 { font-size: 28px; }
-    .status { gap: 10px; }
-    .section-heading span { font-size: 12px; }
+    h1 { font: var(--type-headline-medium); }
+    .intro { margin-bottom: var(--space-2xl); }
   }
 </style>
 <main>
@@ -67,13 +72,7 @@
   <p class="intro">다음 여정을 위한, 나만의 작은 쉼.</p>
   <div class="dashboard">
     <section class="hero" aria-label="추천 휴식">
-      <svg viewBox="0 0 600 280" preserveAspectRatio="none" aria-hidden="true">
-        <circle cx="540" cy="90" r="70" fill="#e4f4be"/>
-        <ellipse cx="558" cy="280" rx="150" ry="39" fill="#b4d17e"/>
-        <path d="M522 255 C498 185 516 126 552 87" fill="none" stroke="#4b693c" stroke-width="4"/>
-        <path d="M510 190 C432 185 438 126 438 120 C504 123 528 151 510 190" fill="#4b693c"/>
-        <path d="M516 154 C516 101 588 92 594 98 C594 134 564 157 516 154" fill="#789353"/>
-      </svg>
+
       <div class="hero-content">
         <p class="eyebrow" id="eyebrow">지금 나에게 필요한 쉼</p>
         <h2 id="rest-title">천천히, 깊게 호흡</h2>
@@ -85,7 +84,7 @@
     <section class="vehicle" aria-label="예시 차량 상태">
       <h2>지금 내 차는</h2>
       <div class="readout"><strong>78</strong><span class="percent">%</span><span class="battery-label">배터리</span></div>
-      <div class="battery" aria-hidden="true"><span></span></div>
+      <div class="battery" role="progressbar" aria-label="예시 배터리" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"><span></span></div>
       <div class="metric"><span>주행 가능 거리</span>324 km</div>
       <div class="metric"><span>실내 온도</span>22°</div>
     </section>

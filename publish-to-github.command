@@ -16,7 +16,7 @@ if ! gh auth status >/dev/null 2>&1; then
     gh auth login --hostname github.com --git-protocol https --web
 fi
 owner="$(gh api user --jq .login)"
-repository="$owner/pleos"
+repository="$owner/thrive"
 
 if git remote get-url origin >/dev/null 2>&1; then
     origin="$(git remote get-url origin)"

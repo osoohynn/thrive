@@ -86,7 +86,7 @@ echo '[4/7] 가상 차량 생성 (RAM 4 GB · 가로 화면 · Cold boot)'
 avd_name='Thrive_Pleos'
 avd_dir="$ANDROID_AVD_HOME/$avd_name.avd"
 if [[ ! -f "$avd_dir/config.ini" ]]; then
-    printf 'no\n' | "$avdmanager" create avd --name "$avd_name" --package "$package_id" --path "$avd_dir"
+    printf 'no\n' | "$avdmanager" create avd --name "$avd_name" --package "$package_id" --device 'Pleos_Connect_v2_0' --path "$avd_dir"
     python3 - "$avd_dir/config.ini" <<'PY'
 from pathlib import Path
 import sys
@@ -94,13 +94,13 @@ import sys
 path = Path(sys.argv[1])
 settings = {
     'hw.ramSize': '4096',
-    'hw.lcd.width': '1920',
-    'hw.lcd.height': '1080',
+    'hw.lcd.width': '2560',
+    'hw.lcd.height': '1440',
     'hw.lcd.density': '160',
     'hw.gpu.enabled': 'yes',
     'hw.gpu.mode': 'auto',
-    'skin.name': '1920x1080',
-    'skin.path': '1920x1080',
+    'skin.name': '2560x1440',
+    'skin.path': '2560x1440',
     'showDeviceFrame': 'no',
     'fastboot.forceColdBoot': 'yes',
 }

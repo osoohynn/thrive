@@ -29,7 +29,7 @@ mkdir -p "$ANDROID_HOME/system-images/android-34/pleos/arm64-v8a"
 touch "$ANDROID_HOME/system-images/android-34/pleos/arm64-v8a/"{package.xml,system.img}
 fi
 ''')
-    executable(sdk / 'cmdline-tools/latest/bin/avdmanager', '''echo 'create avd' >> "$FIXTURE/calls"
+    executable(sdk / 'cmdline-tools/latest/bin/avdmanager', '''echo "avdmanager $*" >> "$FIXTURE/calls"
 while [[ $# -gt 0 ]]; do if [[ "$1" == --path ]]; then mkdir -p "$2"; printf 'hw.ramSize=512\\nskin.name=old\\n' > "$2/config.ini"; break; fi; shift; done
 ''')
     executable(sdk / 'platform-tools/adb', '''echo "adb $*" >> "$FIXTURE/calls"
@@ -50,7 +50,10 @@ fi
     config = root / '.tools/avd/Thrive_Pleos.avd/config.ini'
     assert 'hw.ramSize=4096\n' in config.read_text()
     assert 'hw.ramSize=512' not in config.read_text()
+    for setting in ('hw.lcd.width=2560', 'hw.lcd.height=1440', 'hw.lcd.density=160', 'skin.name=2560x1440', 'skin.path=2560x1440'):
+        assert setting + '\n' in config.read_text()
     assert 'system-images;android-34;pleos;arm64-v8a' in (root / 'calls').read_text()
+    assert '--device Pleos_Connect_v2_0' in (root / 'calls').read_text()
     assert 'src00=https://' in (root / '.tools/android-user/repositories.cfg').read_text()
     config.write_text(config.read_text() + 'keep.existing.data=yes\n')
     assert run().returncode == 0

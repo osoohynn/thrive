@@ -1,0 +1,57 @@
+/* Mirrors ui/theme/ThriveTheme.kt. Source and adaptation: docs/design-system.md. */
+@font-face {
+  font-family: Pretendard;
+  src: url("../app/src/main/res/font/pretendard_variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: Pretendard, "Apple SD Gothic Neo", sans-serif;
+  --color-background: #0b1424;
+  --color-brand: #0f3281;
+  --color-text: #fff;
+  --color-text-secondary: #d5deea;
+  --color-accent: #93e8ee;
+  --color-glass: rgb(255 255 255 / 10%);
+  --color-glass-subtle: rgb(255 255 255 / 5%);
+  --color-glass-selected: rgb(255 255 255 / 16%);
+  --color-reading-surface: rgb(20 34 56 / 92.16%);
+  --color-reading-surface-selected: rgb(28 60 82 / 94.12%);
+  --color-control-border: rgb(255 255 255 / 44%);
+  --color-border: rgb(255 255 255 / 18%);
+  --color-border-strong: rgb(255 255 255 / 60%);
+  --color-scrim: rgb(0 0 0 / 64%);
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-section: 40px;
+  --radius-small: 8px;
+  --radius-panel: 20px;
+  --radius-pill: 9999px;
+  --content-max: 1200px;
+  --touch-target: 64px;
+  --card-min-height: 320px;
+  --activity-min-height: 128px;
+  --progress-height: 6px;
+  --border-width: 1px;
+  --focus-width: 2px;
+  --type-headline: 600 56px/72px Pretendard, sans-serif;
+  --type-headline-medium: 600 48px/64px Pretendard, sans-serif;
+  --type-title: 600 32px/44px Pretendard, sans-serif;
+  --type-title-small: 600 28px/38px Pretendard, sans-serif;
+  --type-body: 400 28px/40px Pretendard, sans-serif;
+  --type-body-small: 400 24px/34px Pretendard, sans-serif;
+  --type-label: 600 26px/36px Pretendard, sans-serif;
+  --type-label-small: 500 22px/30px Pretendard, sans-serif;
+  --type-display: 500 72px/84px Pretendard, sans-serif;
+  --type-unit: 600 40px/52px Pretendard, sans-serif;
+  color: var(--color-text);
+  background: var(--color-background);
+}

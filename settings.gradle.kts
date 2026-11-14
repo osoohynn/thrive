@@ -18,5 +18,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Thrive"
+rootProject.name = "thrive"
 include(":app")
