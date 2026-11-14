@@ -29,7 +29,7 @@ internal data class DemoTrip(
     val title: String get() = if (mode == DriveMode.Practice) goal.title + " 연습" else destination
     val minutes: Int get() = if (mode == DriveMode.Practice) durationMinutes else route.minutes
     // Demonstration estimate only; never used as live route or vehicle data.
-    val distance: String get() = if (mode == DriveMode.Practice) "약 ${durationMinutes / 5}.0" else route.kilometers
+    val distance: String get() = route.kilometers
     val endLabel: String get() = if (mode == DriveMode.Practice) "출발지로 돌아오기" else destination
 }
 

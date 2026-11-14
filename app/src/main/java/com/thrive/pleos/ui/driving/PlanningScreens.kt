@@ -6,6 +6,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.thrive.pleos.ui.theme.*
 
 @Composable
@@ -35,20 +37,37 @@ internal fun DrivingHome(trip: DemoTrip, onNavigate: (DemoScreen) -> Unit) {
 }
 
 @Composable
-internal fun PracticeScreen(goal: PracticeGoal, duration: Int, onGoal: (PracticeGoal) -> Unit, onDuration: (Int) -> Unit, onContinue: () -> Unit) {
+internal fun PracticeScreen(
+    goal: PracticeGoal,
+    duration: Int,
+    onGoal: (PracticeGoal) -> Unit,
+    onDuration: (Int) -> Unit,
+    minimizeLaneChanges: Boolean,
+    onMinimizeLaneChanges: (Boolean) -> Unit,
+    onContinue: () -> Unit,
+) {
     PageTitle("연습하기 / 01", "오늘은 무엇을 익혀볼까요?", "한 가지 목표에 집중해서, 부담 없이 시작해요.")
     Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Md)) {
         PracticeGoal.entries.forEach { item ->
             ChoiceCard(item.title, item.description, goal == item, { onGoal(item) }, mark = item.mark)
         }
     }
-    Text("얼마나 연습할까요?", style = MaterialTheme.typography.titleMedium)
+    Text("최대 몇 분까지 연습할까요?", style = MaterialTheme.typography.titleMedium)
     FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Md), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Md)) {
-        listOf(15, 30, 45).forEach { minutes ->
+        practiceTimeOptions.forEach { minutes ->
             SelectionChip("${minutes}분", duration == minutes) { onDuration(minutes) }
         }
     }
-    Text("출발 · 현재 위치 / 기본 코스 · 출발지로 돌아오기", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+    if (goal != PracticeGoal.Daily) ContentPanel("차선 변경은 최소로") {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Md)) {
+            Switch(checked = minimizeLaneChanges, onCheckedChange = onMinimizeLaneChanges,
+                modifier = Modifier.sizeIn(minWidth = ThriveSize.TouchTarget, minHeight = ThriveSize.TouchTarget)
+                    .semantics { contentDescription = "차선 변경 최소화" })
+            Text(if (minimizeLaneChanges) "예시 변경 구간 1회 이하" else "변경 횟수 제한 없음", style = MaterialTheme.typography.bodyLarge)
+        }
+        Text("차선 변경 준비 목표는 변경 구간 2회 이상의 예시를 찾아요. 조건이 겹치면 코스가 없을 수 있어요.", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+    }
+    Text("예시 코스에서 조건을 먼저 확인해요. 실제 출발 위치와 도로·교통 정보는 연동하지 않았어요.", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
     PrimaryAction(if (goal == PracticeGoal.Daily) "목적지 선택하기" else "연습 코스 찾기", onContinue)
 }
 
@@ -88,30 +107,53 @@ internal fun DestinationScreen(query: String, onQuery: (String) -> Unit, onDesti
 }
 
 @Composable
-internal fun RoutesScreen(trip: DemoTrip, onRoute: (DemoRoute) -> Unit, onContinue: () -> Unit) {
-    PageTitle(if (trip.mode == DriveMode.Practice) "연습하기 / 02" else "운전하기", "나에게 맞는 길로.", "${trip.title} · 추천 이유를 확인하고 선택해요.")
+internal fun RoutesScreen(
+    trip: DemoTrip,
+    recommendations: List<PracticeRecommendation>,
+    onRoute: (DemoRoute) -> Unit,
+    onAdjust: () -> Unit,
+    onContinue: () -> Unit,
+) {
+    val practice = trip.mode == DriveMode.Practice
+    PageTitle(if (practice) "연습하기 / 02" else "운전하기", "나에게 맞는 길로.",
+        if (practice) "${trip.goal.title} · 조건에 맞는 예시 코스 ${recommendations.size}개" else "${trip.title} · 예시 경로를 선택해요.")
+    if (practice && recommendations.isEmpty()) {
+        ContentPanel("조건에 맞는 예시 코스가 없어요") {
+            Text("시간을 늘리거나 차선 변경 최소화 조건을 조정해 주세요. 조건에 맞지 않는 길을 대신 선택하지 않아요.", style = MaterialTheme.typography.bodyLarge)
+            SecondaryAction("연습 조건 바꾸기", onAdjust)
+        }
+        return
+    }
     ResponsivePair(
         first = { CourseMap(trip.route, it) },
         second = { modifier ->
             Column(modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Md)) {
-                DemoRoute.entries.forEach { route ->
-                    val candidate = trip.copy(route = route)
-                    ChoiceCard(route.title, "${candidate.minutes}분 · ${candidate.distance} km\n차선 변경 ${route.laneChanges}회 · 예시", route == trip.route, { onRoute(route) })
+                if (practice) recommendations.forEachIndexed { index, item ->
+                    ChoiceCard(item.route.title,
+                        "${item.route.minutes}분 · ${item.route.kilometers} km · 차선 변경 ${item.route.laneChanges}회 · 예시\n${item.reason}",
+                        item.route == trip.route, { onRoute(item.route) }, mark = if (index == 0) "추천" else "대안")
+                } else DemoRoute.entries.forEach { route ->
+                    ChoiceCard(route.title, "${route.minutes}분 · ${route.kilometers} km\n차선 변경 ${route.laneChanges}회 · 예시", route == trip.route, { onRoute(route) })
                 }
             }
         },
     )
-    Text("검토용 코스입니다. 실시간 교통 정보와 실제 경로 분석은 연동하지 않았어요.", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+    Text("예시 속성을 비교한 추천이에요. 실제 도로 검토·실시간 교통·내비 경로 생성은 연동하지 않았어요.", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+    if (practice) SecondaryAction("연습 조건 바꾸기", onAdjust)
     PrimaryAction("이 코스로 준비하기", onContinue)
 }
 
 @Composable
-internal fun BriefScreen(trip: DemoTrip, voice: Boolean, onVoice: (Boolean) -> Unit, onStart: () -> Unit) {
+internal fun BriefScreen(trip: DemoTrip, onStart: () -> Unit, guidance: @Composable () -> Unit) {
     PageTitle("출발 전, 잠깐", "길을 먼저 알면, 조금 더 여유롭게.", "${trip.title} · 예상 ${trip.minutes}분 · ${trip.distance} km")
+    if (trip.mode == DriveMode.Practice) ContentPanel("선택한 예시 코스") {
+        Text("${trip.route.title} · ${trip.minutes}분 · ${trip.route.kilometers} km · 차선 변경 ${trip.route.laneChanges}회", style = MaterialTheme.typography.bodyLarge)
+        Text("목표와 조건을 바탕으로 선택했어요. 아래 지도·구간은 실제 경로 안내가 아닌 예시입니다.", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+    }
     ResponsivePair(
         first = { CourseMap(trip.route, it) },
         second = { modifier ->
-            ContentPanel("미리 살펴볼 구간", modifier) {
+            ContentPanel("미리 살펴볼 구간 · 예시", modifier) {
                 Text("01  성수이로 진입", style = MaterialTheme.typography.titleSmall)
                 Text("출발 후 우회전 구간이 있어요.", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
                 Text("02  성수역 교차로", style = MaterialTheme.typography.titleSmall)
@@ -121,13 +163,7 @@ internal fun BriefScreen(trip: DemoTrip, voice: Boolean, onVoice: (Boolean) -> U
             }
         },
     )
-    ContentPanel("음성 학습 안내") {
-        Text("필요한 순간에 짧게 알려드리는 흐름입니다. 현재 시연에서는 실제 음성을 재생하지 않아요.", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Lg), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Sm), itemVerticalAlignment = Alignment.CenterVertically) {
-            Switch(checked = voice, onCheckedChange = onVoice, modifier = Modifier.sizeIn(minWidth = ThriveSize.TouchTarget, minHeight = ThriveSize.TouchTarget))
-            Text(if (voice) "안내 켜짐" else "안내 꺼짐", style = MaterialTheme.typography.labelLarge)
-        }
-    }
+    guidance()
     PrimaryAction("함께 출발하기", onStart)
 }
 

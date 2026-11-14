@@ -23,10 +23,11 @@ internal fun PageTitle(kicker: String, title: String, description: String) {
 }
 
 @Composable
-internal fun PrimaryAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun PrimaryAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     var focused by remember { mutableStateOf(false) }
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.heightIn(min = ThriveSize.TouchTarget).onFocusChanged { focused = it.isFocused },
         shape = ThriveShape.Pill,
         border = if (focused) BorderStroke(ThriveSize.FocusBorder, ThriveColors.Accent) else null,
