@@ -3,6 +3,8 @@
     <uses-feature android:name="android.hardware.type.automotive" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -24,6 +26,7 @@
         android:label="${thriveAppLabel}"
         android:supportsRtl="true"
         android:theme="@style/Theme.Thrive">
+        <service android:name=".driving.curriculum.PracticeConditionJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />
         <receiver android:name=".driving.invitation.InvitationDismissReceiver" android:exported="false" />
         <service
             android:name=".driving.recording.DriveRecordingService"

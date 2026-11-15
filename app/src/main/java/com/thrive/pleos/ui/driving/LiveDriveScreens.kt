@@ -1,5 +1,6 @@
 package com.thrive.pleos.ui.driving
 
+import com.thrive.pleos.driving.curriculum.practiceTopic
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -11,10 +12,11 @@ import com.thrive.pleos.ui.theme.ThriveColors
 import java.util.Locale
 
 internal val SavedDrive.isSdk: Boolean get() = source == "SDK"
-internal val SavedDrive.displayTitle: String get() = if (isSdk) destination else toDemoTrip().title
-internal val SavedDrive.sourceLabel: String get() = if (!isSdk) "시연 데이터" else if (environment == "EMULATOR") "에뮬레이터 SDK 수신" else "SDK 수신 기록"
+internal val SavedDrive.displayTitle: String get() = practiceTopic(curriculumItemId)?.title ?: if (isSdk) destination else toDemoTrip().title
+internal val SavedDrive.sourceLabel: String get() = if (source == "STATIONARY") "정차 연습" else if (!isSdk) "시연 데이터" else if (environment == "EMULATOR") "에뮬레이터 SDK 수신" else "SDK 수신 기록"
 internal val SavedDrive.badgeLabel: String get() = when {
     status == "Interrupted" -> "이어갈 기록"
+    source == "STATIONARY" -> "정차 연습"
     isSdk -> "실제 기록"
     else -> "시연"
 }

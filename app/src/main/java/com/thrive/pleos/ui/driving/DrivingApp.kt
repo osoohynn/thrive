@@ -1,5 +1,6 @@
 package com.thrive.pleos.ui.driving
 
+import com.thrive.pleos.driving.curriculum.*
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -43,13 +44,24 @@ import com.thrive.pleos.ui.theme.*
 fun DrivingApp() {
     if (LocalInspectionMode.current) {
         DrivingScaffold(DemoScreen.Home, false, rememberScrollState(), {}, null) {
-            DrivingHome(NavigationState(), {})
+            DrivingHome(NavigationState(), onNavigate = {})
         }
         return
     }
     val model: DrivingViewModel = viewModel()
     val context = LocalContext.current
     // Deliberately transient: activity recreation requires the user to confirm a new action.
+    var pendingReminderId by remember { mutableStateOf<String?>(null) }
+    val reminderPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val id = pendingReminderId; pendingReminderId = null
+        if (granted && id != null) model.setPracticeReminder(id, true)
+        else if (!granted) model.reminderPermissionDenied()
+    }
+    fun requestReminder(id: String) {
+        if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            pendingReminderId = id; reminderPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else model.setPracticeReminder(id, true)
+    }
     var pendingLocationAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
         val action = pendingLocationAction
@@ -123,6 +135,9 @@ fun DrivingApp() {
     var animatePage by remember { mutableStateOf(false) }
     val flowScreens = listOf(DemoScreen.Practice, DemoScreen.Destination, DemoScreen.Routes, DemoScreen.Brief, DemoScreen.NativePractice)
     var backStack by rememberSaveable { mutableStateOf(listOf(DemoScreen.Home.name)) }
+    var curriculumTopicId by rememberSaveable { mutableStateOf<String?>(null) }
+    var curriculumMinutes by rememberSaveable { mutableIntStateOf(30) }
+    var changeCurriculumStage by rememberSaveable { mutableStateOf(false) }
     var goal by rememberSaveable { mutableStateOf(PracticeGoal.Turns) }
     var mode by rememberSaveable { mutableStateOf(DriveMode.Destination) }
     var route by rememberSaveable { mutableStateOf(DemoRoute.Gentle) }
@@ -185,6 +200,17 @@ fun DrivingApp() {
     }
     BackHandler(backStack.size > 1 || invitation) { navigateBack() }
     val activity = context as MainActivity
+    val requestedTopic by activity.curriculumTopic.collectAsState()
+    LaunchedEffect(requestedTopic, local.ready) {
+        val topic = practiceTopic(requestedTopic)
+        if (local.ready && topic != null) {
+            model.setCurriculumTrack(topicTrack(topic)) {
+                curriculumTopicId = topic.id; changeCurriculumStage = false
+                backStack = listOf(DemoScreen.Home.name, DemoScreen.Practice.name)
+                activity.clearCurriculumTopic()
+            }
+        }
+    }
     val invitationToken by activity.invitationToken.collectAsState()
     LaunchedEffect(invitationToken) {
         invitationToken?.let { token ->
@@ -232,7 +258,7 @@ fun DrivingApp() {
     }
     CompositionLocalProvider(LocalPageNotices provides notices,
         LocalPracticeStep provides (when {
-            screen == DemoScreen.Practice -> 0
+            screen == DemoScreen.Practice -> null
             backStack.contains(DemoScreen.Practice.name) && screen == DemoScreen.Destination -> 0
             (mode == DriveMode.Practice || backStack.contains(DemoScreen.Practice.name)) && screen == DemoScreen.Routes -> 1
             (mode == DriveMode.Practice || backStack.contains(DemoScreen.Practice.name)) && screen == DemoScreen.Brief -> 2
@@ -245,7 +271,7 @@ fun DrivingApp() {
         motion = motionMode(parked, screen == DemoScreen.Driving || local.active?.status == SessionStatus.Recording.name,
             keyboard, systemMotion, local.preferences.reducedMotion),
         onNavigate = { tab ->
-            reviewOriginId = null; animatePage = false
+            reviewOriginId = null; animatePage = false; changeCurriculumStage = false
             if (tab == DemoScreen.Home) returnHome()
             else { backStack = listOf(DemoScreen.Home.name, tab.name); invitation = false }
         },
@@ -263,35 +289,22 @@ fun DrivingApp() {
                       PageMotion(screen, backwards, enabled = animatePage) {
                         Column(Modifier.widthIn(max = ThriveSize.ContentMaxWidth).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Xxl)) {
                             when (screen) {
-                                DemoScreen.Home -> { DrivingHome(navigation) { target ->
+                                DemoScreen.Home -> { DrivingHome(navigation, preferences = local.preferences, records = local.records,
+                                    onNavigate = { target ->
                                     if (target in listOf(DemoScreen.Navigation, DemoScreen.Brief, DemoScreen.DemoNavigation, DemoScreen.Destination)) mode = DriveMode.Destination
                                     if (target == DemoScreen.Brief || target == DemoScreen.DemoNavigation) {
                                         destination = demoDestinations.first()
                                         route = DemoRoute.Gentle
                                         reviewOriginId = null
                                     }
+                                    if (target == DemoScreen.Practice) { changeCurriculumStage = false; curriculumTopicId = null }
                                     navigate(target)
+                                })
                                 }
-                                }
-                                DemoScreen.Practice -> {
-                                    PracticeScreen(
-                                        goal, duration,
-                                        { goal = it; route = DemoRoute.Gentle; reviewOriginId = null },
-                                        { duration = it; reviewOriginId = null },
-                                        minimizeLaneChanges, { minimizeLaneChanges = it; reviewOriginId = null },
-                                        onNative = { mode = DriveMode.Practice; navigate(DemoScreen.NativePractice) },
-                                        previous = {
-                                    local.records.firstOrNull { it.id == reviewOriginId }?.let { origin ->
-                                        ContentPanel("이전 연습") {
-                                            Text("${origin.feeling} · ${goal.title} · 최대 ${duration}분", style = MaterialTheme.typography.bodyLarge)
-                                        }
-                                    }
-                                        },
-                                    ) {
-                                        if (goal == PracticeGoal.Daily) navigate(DemoScreen.Destination)
-                                        else { mode = DriveMode.Practice; navigate(DemoScreen.Routes) }
-                                    }
-                                }
+                                DemoScreen.Practice -> CurriculumFlow(local, model, curriculumTopicId, curriculumMinutes, changeCurriculumStage,
+                                    parked, scrollState, ::requestReminder, { navigate(DemoScreen.Driving) }, {
+                                        mode = DriveMode.Practice; navigate(DemoScreen.NativePractice)
+                                    })
                                 DemoScreen.NativePractice -> {
                                     val origin = local.records.firstOrNull { it.id == reviewOriginId }
                                     val preferred = origin?.practiceStopName?.let { name ->
@@ -358,7 +371,9 @@ fun DrivingApp() {
                                             else model.resume {}
                                         })
                                         SecondaryAction("기록 종료하기", { model.finish { reportId = it; navigate(DemoScreen.Report) } })
-                                    } else if (active.isSdk) LiveDriveScreen(active, local.elapsedMs,
+                                    } else if (practiceTopic(active.curriculumItemId) != null) CurriculumDriving(active, local.elapsedMs,
+                                        { model.finish { reportId = it; navigate(DemoScreen.Report) } }, model, parked)
+                                    else if (active.isSdk) LiveDriveScreen(active, local.elapsedMs,
                                         onReconnect = { withLocationPermission { model.reconnectLocation() } },
                                         onFinish = { model.finish { reportId = it; navigate(DemoScreen.Report) } },
                                         coaching = coaching, onCoaching = model::setVoice,
@@ -374,6 +389,14 @@ fun DrivingApp() {
                                     if (record == null) {
                                         PageTitle("주행 리포트")
                                         ContentPanel("기록을 찾을 수 없어요") { SecondaryAction("기록 목록으로", { navigate(DemoScreen.History) }) }
+                                    } else if (practiceTopic(record.curriculumItemId) != null) {
+                                        fun prepareCurriculum(topic: PracticeTopic, minutes: Int) {
+                                            model.setCurriculumTrack(topicTrack(topic)) {
+                                                curriculumTopicId = topic.id; curriculumMinutes = minutes; changeCurriculumStage = false
+                                                backStack = listOf(DemoScreen.Home.name, DemoScreen.Practice.name)
+                                            }
+                                        }
+                                        CurriculumReport(record, local.records, local.busy, { model.setFeeling(record.id, it) }, ::prepareCurriculum, ::prepareCurriculum)
                                     } else ReportScreen(record, local.busy, { model.setFeeling(record.id, it) }, onSuggested = {
                                         model.prepareNextPractice(record.id) { plan ->
                                             reviewOriginId = record.id
@@ -408,7 +431,9 @@ fun DrivingApp() {
                                 }, model::deleteRecord, model::deleteAllFinished)
                                 DemoScreen.Profile -> ProfileScreen(local.preferences.experience, local.preferences.concerns.toList(),
                                     model::setExperience, model::toggleConcern, { model.finishProfileEdit { returnHome() } },
-                                    reducedMotion = local.preferences.reducedMotion, onReducedMotion = model::setReducedMotion)
+                                    reducedMotion = local.preferences.reducedMotion, onReducedMotion = model::setReducedMotion,
+                                    curriculumTrack = local.preferences.curriculumTrack,
+                                    onCurriculumStage = { changeCurriculumStage = true; navigate(DemoScreen.Practice) })
                             }
                         }
                       }

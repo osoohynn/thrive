@@ -1,5 +1,6 @@
 package com.thrive.pleos.ui.driving
 
+import com.thrive.pleos.driving.curriculum.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.*
@@ -7,30 +8,121 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalDensity
+import com.thrive.pleos.driving.storage.DriverPreferences
+import com.thrive.pleos.driving.storage.SavedDrive
+import com.thrive.pleos.driving.storage.SessionStatus
+import java.util.Locale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.thrive.pleos.ui.theme.*
 import com.thrive.pleos.driving.navigation.NavigationState
 
 @Composable
-internal fun DrivingHome(navigation: NavigationState, onNavigate: (DemoScreen) -> Unit) {
+internal fun DrivingHome(
+    navigation: NavigationState,
+    preferences: DriverPreferences = DriverPreferences(),
+    records: List<SavedDrive> = emptyList(),
+    onNavigate: (DemoScreen) -> Unit,
+) {
     PageTitle("홈")
     ResponsivePair(
-        first = { modifier -> ContentPanel("내비 목적지", modifier, shadowElevation = 3.dp) {
+        first = { modifier -> HomeDashboardCard(modifier, minHeight = 298.dp) {
+            Text("내비 목적지", style = MaterialTheme.typography.titleMedium)
             Text(navigation.destinationName ?: "목적지 없음", style = MaterialTheme.typography.headlineSmall)
-            PrimaryAction("실제 목적지 기록", { onNavigate(DemoScreen.Navigation) })
+            val estimate = navigation.estimate?.takeIf { navigation.connected && navigation.destination != null && it.valid }
+            if (estimate != null) FlowRow(horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Xl),
+                verticalArrangement = Arrangement.spacedBy(ThriveSpace.Sm)) {
+                Text("${estimate.minutes}분", style = MaterialTheme.typography.headlineSmall)
+                Text(String.format(Locale.getDefault(), "%.1f km", estimate.meters / 1000.0),
+                    style = MaterialTheme.typography.headlineSmall, color = ThriveColors.TextSecondary)
+            } else Text("기본 내비 경로", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+            Spacer(Modifier.weight(1f))
+            PrimaryAction("출발 준비하기", { onNavigate(DemoScreen.Navigation) })
         } },
-        second = { modifier -> ContentPanel("연습", modifier, shadowElevation = 3.dp) {
+        second = { modifier -> HomeDashboardCard(modifier, minHeight = 298.dp) {
+            Text("연습 시작", style = MaterialTheme.typography.titleMedium)
+            Text(CurriculumTrack.from(preferences.curriculumTrack)?.chip ?: "연습 단계 미선택", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+            Spacer(Modifier.weight(1f))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Md), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Md)) {
-                SecondaryAction("연습 코스 찾기", { onNavigate(DemoScreen.Practice) })
+                PrimaryAction("연습 코스 찾기", { onNavigate(DemoScreen.Practice) })
                 SecondaryAction("목적지 찾기", { onNavigate(DemoScreen.Destination) })
             }
         } }, firstWeight = 845f, secondWeight = 611f, equalHeight = true,
     )
-    ContentPanel("시연", shadowElevation = 3.dp) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Md), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Md)) {
-            SecondaryAction("출발 준비하기", { onNavigate(DemoScreen.Brief) })
-            SecondaryAction("지도 연동 체험", { onNavigate(DemoScreen.DemoNavigation) })
+    HomeDashboard(preferences, records, onNavigate)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Md), verticalArrangement = Arrangement.spacedBy(ThriveSpace.Sm)) {
+        TextButton({ onNavigate(DemoScreen.Brief) }, Modifier.heightIn(min = ThriveSize.TouchTarget)) {
+            Text("시연 코스 준비", style = MaterialTheme.typography.labelLarge)
+        }
+        TextButton({ onNavigate(DemoScreen.DemoNavigation) }, Modifier.heightIn(min = ThriveSize.TouchTarget)) {
+            Text("지도 연동 체험", style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+@Composable
+private fun HomeDashboardCard(
+    modifier: Modifier = Modifier,
+    minHeight: Dp = 360.dp,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ThriveGlassPanel(modifier.fillMaxWidth(), shadowElevation = 3.dp) {
+        Column(Modifier.fillMaxWidth().heightIn(min = minHeight).padding(ThriveSpace.Panel),
+            verticalArrangement = Arrangement.spacedBy(ThriveSpace.Lg), content = content)
+    }
+}
+
+@Composable
+private fun HomeDashboard(
+    preferences: DriverPreferences,
+    records: List<SavedDrive>,
+    onNavigate: (DemoScreen) -> Unit,
+) {
+    val completed = records.filter { it.status == SessionStatus.Completed.name }
+    val track = CurriculumTrack.from(preferences.curriculumTrack)
+    val catalog = track?.let(::curriculum)
+    val completedIds = completedTopics(records)
+    val next = catalog?.topics?.firstOrNull { it.id !in completedIds } ?: catalog?.topics?.lastOrNull()
+    val practice: @Composable (Modifier) -> Unit = { modifier -> HomeDashboardCard(modifier) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Lg), verticalAlignment = Alignment.CenterVertically) {
+            Text("오늘의 연습", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            SecondaryAction("연습 코스 찾기", { onNavigate(DemoScreen.Practice) })
+        }
+        Text(track?.let { "${it.title} · ${catalog!!.topics.count { item -> item.id in completedIds }}/${catalog.topics.size} 완료" } ?: "연습 단계 미선택", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+        Spacer(Modifier.weight(1f))
+        ChoiceCard(next?.title ?: "연습 단계 선택", "", false, { onNavigate(DemoScreen.Practice) }, mark = "01")
+    } }
+    val history: @Composable (Modifier) -> Unit = { modifier -> HomeDashboardCard(modifier) {
+        Text("주행 기록", style = MaterialTheme.typography.titleMedium)
+        Text("${completed.size}회", style = MaterialTheme.typography.headlineSmall)
+        val recent = completed.firstOrNull()
+        if (recent != null) {
+            Text(recent.displayTitle, style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+            StatusBadge(recent.badgeLabel)
+        } else Text("저장된 기록 없음", style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+        Spacer(Modifier.weight(1f))
+        SecondaryAction("기록 살펴보기", { onNavigate(DemoScreen.History) })
+    } }
+    val profile: @Composable (Modifier) -> Unit = { modifier -> HomeDashboardCard(modifier) {
+        Text("내 운전", style = MaterialTheme.typography.titleMedium)
+        Text(preferences.experience, style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+        Text(preferences.concerns.sorted().joinToString(" · ").ifEmpty { "관심 상황 미선택" },
+            style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+        Spacer(Modifier.weight(1f))
+        SecondaryAction("내 운전 살펴보기", { onNavigate(DemoScreen.Profile) })
+    } }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val scale = LocalDensity.current.fontScale
+        if (maxWidth >= 1200.dp * scale) Row(Modifier.height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Xxl)) {
+            practice(Modifier.weight(728f).fillMaxHeight())
+            history(Modifier.weight(352f).fillMaxHeight())
+            profile(Modifier.weight(352f).fillMaxHeight())
+        } else Column(verticalArrangement = Arrangement.spacedBy(ThriveSpace.Xxl)) {
+            practice(Modifier.fillMaxWidth())
+            ResponsivePair(history, profile, equalHeight = true)
         }
     }
 }

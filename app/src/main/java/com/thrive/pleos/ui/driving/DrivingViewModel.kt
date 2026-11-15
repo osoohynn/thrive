@@ -1,5 +1,6 @@
 package com.thrive.pleos.ui.driving
 
+import com.thrive.pleos.driving.curriculum.*
 import android.app.Application
 import android.os.SystemClock
 import android.os.Build
@@ -31,6 +32,10 @@ internal data class DrivingLocalState(
     val locationPermissionNotice: String? = null,
     val saved: SaveFeedback? = null,
     val savingKey: String? = null,
+    val conditions: PracticeConditions? = null,
+    val conditionMessage: String = "시간대·날씨 확인 필요",
+    val conditionBusy: Boolean = false,
+    val reminders: Set<String> = emptySet(),
 ) {
     val ready: Boolean get() = preferencesLoaded && recordsLoaded
     val active: SavedDrive? get() = records.firstOrNull { it.activeSlot == 1 }
@@ -38,6 +43,7 @@ internal data class DrivingLocalState(
 
 internal class DrivingViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = DriveDatabase.get(application).drives()
+    private val reminders = PracticeReminders(application)
     private val preferences = DriverPreferencesStore(application)
     private val mutableState = MutableStateFlow(DrivingLocalState())
     val local = mutableState.asStateFlow()
@@ -63,6 +69,8 @@ internal class DrivingViewModel(application: Application) : AndroidViewModel(app
 
     init {
         reload()
+        mutableState.update { it.copy(reminders = reminders.selected) }
+        runCatching { reminders.schedule() }
         viewModelScope.launch {
             recorder.state.collect { recording ->
                 mutableState.update { it.copy(elapsedMs = recording.elapsedMs, error = recording.error ?:
@@ -129,6 +137,69 @@ internal class DrivingViewModel(application: Application) : AndroidViewModel(app
         try {
             while (currentCoroutineContext().isActive) { delay(3_000); motionParking.query() }
         } finally { motionParking.release() }
+    }
+
+    fun setCurriculumTrack(track: CurriculumTrack, onSaved: () -> Unit = {}) = save("curriculum") {
+        preferences.setCurriculumTrack(track.name)
+        onSaved()
+    }
+    fun refreshConditions() {
+        if (local.value.conditionBusy) return
+        val origin = navigation.state.value.freshOrigin(SystemClock.elapsedRealtime())
+        if (origin == null) {
+            mutableState.update { it.copy(conditions = null, conditionMessage = "현재 위치를 확인할 수 없어요. 기본 내비를 연결하고 다시 확인해 주세요.") }
+            return
+        }
+        viewModelScope.launch {
+            mutableState.update { it.copy(conditionBusy = true, conditions = null, conditionMessage = "시간대·날씨 확인 중…") }
+            try {
+                val result = fetchPracticeConditions(origin.latitude, origin.longitude)
+                mutableState.update { it.copy(conditions = result, conditionMessage = "Open-Meteo · 현재 위치 기준 예보") }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { mutableState.update { it.copy(conditionMessage = "날씨를 확인하지 못했어요. 다시 시도해 주세요.") } }
+            finally { mutableState.update { it.copy(conditionBusy = false) } }
+        }
+    }
+    fun reminderPermissionDenied() { mutableState.update { it.copy(error = "조건 알림을 받으려면 앱 설정에서 알림을 허용해 주세요.") } }
+    fun setPracticeReminder(id: String, enabled: Boolean) = operation {
+        if (enabled) {
+            val origin = navigation.state.value.freshOrigin(SystemClock.elapsedRealtime())
+                ?: error("현재 위치를 먼저 확인해 주세요.")
+            reminders.enable(id, origin.latitude, origin.longitude)
+        } else reminders.disable(id)
+        mutableState.update { it.copy(reminders = reminders.selected) }
+    }
+    fun playCurriculumPoint(id: String, point: Int = 0) {
+        val topic = practiceTopic(id) ?: return
+        if (local.value.active?.source == "SDK") return
+        val text = topic.points.getOrNull(point) ?: return
+        voiceGuidance.play("curriculum:$id:$point", text, local.value.ready && local.value.preferences.voice)
+    }
+    fun startCurriculum(id: String, courseId: String?, maxMinutes: Int, destination: String,
+                        companion: Boolean, onStarted: () -> Unit) = operation {
+        val topic = checkNotNull(practiceTopic(id))
+        check(local.value.preferences.curriculumTrack == topicTrack(topic).name)
+        check(maxMinutes in listOf(15, 30, 45))
+        check(!requiresCompanion(topic) || companion) { "동승 여부를 먼저 확인해 주세요." }
+        if (topic.kind in setOf(PracticeKind.Night, PracticeKind.Rain)) {
+            check(local.value.conditions?.permits(topic.kind, System.currentTimeMillis()) == true) { "현재 시간대·날씨 조건을 다시 확인해 주세요." }
+        }
+        val course = if (topic.kind == PracticeKind.Stationary) null else
+            checkNotNull(practiceCourses(topic, maxMinutes, destination).firstOrNull { it.id == courseId })
+        if (topic.kind == PracticeKind.Stationary) check(parkingState.value.freshPark(SystemClock.elapsedRealtime())) { "P단 주차 상태를 확인해 주세요." }
+        check(dao.active() == null) { "진행 중인 기록을 먼저 종료해 주세요." }
+        val proposed = SavedDrive(id = UUID.randomUUID().toString(),
+            source = if (topic.kind == PracticeKind.Stationary) "STATIONARY" else "DEMO", mode = DriveMode.Practice.name,
+            goal = when { topic.id.startsWith("b31") -> PracticeGoal.Lanes.name
+                topic.kind == PracticeKind.Destination -> PracticeGoal.Daily.name
+                else -> PracticeGoal.Turns.name },
+            route = if (course?.direct == true) DemoRoute.Direct.name else DemoRoute.Gentle.name,
+            destination = course?.title ?: "P단 정차 연습", plannedMinutes = course?.minutes ?: maxMinutes,
+            practiceMaxMinutes = maxMinutes, plannedDistanceMeters = course?.km?.toDouble()?.times(1000),
+            curriculumItemId = id, curriculumCourseId = course?.id, startedAtEpochMs = System.currentTimeMillis())
+        val session = recorder.start(proposed)
+        mutableState.update { it.copy(records = listOf(session) + it.records.filterNot { row -> row.id == session.id }) }
+        voiceGuidance.stop(); onStarted()
     }
 
     fun setExperience(value: String) = save("profile") { preferences.setExperience(value) }

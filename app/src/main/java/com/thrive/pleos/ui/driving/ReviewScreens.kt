@@ -1,5 +1,6 @@
 package com.thrive.pleos.ui.driving
 
+import com.thrive.pleos.driving.curriculum.CurriculumTrack
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.*
@@ -163,8 +164,12 @@ internal fun HistoryScreen(records: List<SavedDrive>, onOpen: (SavedDrive) -> Un
 }
 
 @Composable
-internal fun ProfileScreen(experience: String, concerns: List<String>, onExperience: (String) -> Unit, onConcern: (String) -> Unit, onSave: () -> Unit, reducedMotion: Boolean = false, onReducedMotion: (Boolean) -> Unit = {}) {
+internal fun ProfileScreen(experience: String, concerns: List<String>, onExperience: (String) -> Unit, onConcern: (String) -> Unit, onSave: () -> Unit, reducedMotion: Boolean = false, onReducedMotion: (Boolean) -> Unit = {}, curriculumTrack: String? = null, onCurriculumStage: () -> Unit = {}) {
     PageTitle("내 운전")
+    ContentPanel("연습 단계") {
+        Text(CurriculumTrack.from(curriculumTrack)?.title ?: "미선택", style = MaterialTheme.typography.titleSmall)
+        SecondaryAction("연습 단계 변경", onCurriculumStage)
+    }
     Text("운전 경험", style = MaterialTheme.typography.titleMedium)
     ChoiceGrid(listOf("처음 시작해요", "쉬었다 다시 시작해요", "가끔 운전해요").map { label -> { modifier ->
         ChoiceCard(label, "", experience == label, { onExperience(label) }, modifier)
@@ -175,7 +180,6 @@ internal fun ProfileScreen(experience: String, concerns: List<String>, onExperie
             SelectionChip(label, concerns.contains(label)) { onConcern(label) }
         }
     }
-    Text("주차: 관심 항목만 저장 · 전용 코스 미제공", style = MaterialTheme.typography.bodySmall, color = ThriveColors.TextSecondary)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Lg), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         ThriveToggle(reducedMotion, onReducedMotion, "화면 움직임 줄이기")
         Column(Modifier.weight(1f)) {

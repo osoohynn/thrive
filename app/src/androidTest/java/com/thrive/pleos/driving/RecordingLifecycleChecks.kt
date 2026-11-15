@@ -23,6 +23,16 @@ class RecordingLifecycleChecks : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (scenario == "curriculum_ui") {
+                result.putString("stream", FigmaUiChecks(this).runCurriculum() + "\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
+            if (scenario == "dashboard_ui") {
+                result.putString("stream", FigmaUiChecks(this).runDashboard() + "\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (scenario == "nav_ui") {
                 result.putString("stream", FigmaUiChecks(this).runNavigation() + "\n")
                 finish(Activity.RESULT_OK, result)

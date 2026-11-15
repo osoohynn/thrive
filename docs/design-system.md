@@ -60,7 +60,7 @@ Pretendard 가변 폰트의 400/500/600/700 굵기를 사용한다. 제목 40/32
 
 1700×1184 앱 영역의 기본값은 왼쪽 28, 위 35, 오른쪽 41dp다. NavRail은 기본 128dp, 콘텐츠와의 간격은 47dp, 콘텐츠 최대 폭은 1480dp다. 시스템 상태바·Driving view·GNB는 앱 내부에 복제하지 않는다.
 
-패널 반경 20dp, 내부 여백 28dp, 섹션 간격 24dp, 선택 카드 간격 16dp를 사용한다. 버튼·칩 터치 높이는 최소 64dp다. 버튼·칩 반경은 16dp다. ChoiceCard의 선택 테두리와 포커스는 2dp이며, 비선택 카드와 일반 패널은 단일 흰색 92% 표면으로 그린다. 일반 패널과 내비바에는 그림자를 사용하지 않으며, 홈 카드 세 곳에만 3dp의 낮은 그림자를 추가한다. 그림자는 단일 배경 바깥에 그려 내부 색 차이를 만들지 않는다. 다이얼로그는 최대 860dp, 반경 28dp, 여백 44dp다.
+패널 반경 20dp, 내부 여백 28dp, 섹션 간격 24dp, 선택 카드 간격 16dp를 사용한다. 버튼·칩 터치 높이는 최소 64dp다. 버튼·칩 반경은 16dp다. ChoiceCard의 선택 테두리와 포커스는 2dp이며, 비선택 카드와 일반 패널은 단일 흰색 92% 표면으로 그린다. 일반 패널과 내비바에는 그림자를 사용하지 않으며, 홈 카드에만 3dp의 낮은 그림자를 추가한다. 그림자는 단일 배경 바깥에 그려 내부 색 차이를 만들지 않는다. 다이얼로그는 최대 860dp, 반경 28dp, 여백 44dp다.
 
 콘텐츠 폭 760dp를 기준으로 지도/패널과 3열 카드를 세로로 바꾼다. 글자 배율도 분기 조건에 반영한다. 내비게이션은 네 항목을 28dp 반경의 한 표면에 붙여 배치한다. 내부 여백과 항목 사이 간격은 8dp, 기본 항목 높이는 112dp이며 큰 글자 설정에 맞춰 확대한다. 개별 테두리는 키보드 포커스에만 표시한다. 작은 창에서는 같은 바를 상단 가로 배열로 배치하고, 주행 화면에서는 내비게이션을 숨긴다. 고정 높이로 본문을 잘라내지 않는다.
 
@@ -130,7 +130,7 @@ Status bar·Driving view·GNB는 시스템 영역, Application window는 Thrive�
 
 ## 화면 강조와 모션
 
-홈은 내비 목적지·연습·시연의 기능과 버튼만 표시한다. 별도 장식 경로 그림과 카드 자체의 그라데이션은 추가하지 않는다. 원본의 물결 배경은 유지한다. 연습 단계는 3개의 얇은 진행 막대로 표시하고 접근성 설명을 제공한다. 기록에는 실제·시연 상태 배지를 유지하고, 목록 행으로 날짜·시간·동작을 정렬한다.
+홈은 상단 목적지/연습 시작 카드와 하단 오늘의 연습/주행 기록/내 운전 대시보드로 구성한다. 상단은 845:611, 넓은 하단은 728:352:352 비율이며, 콘텐츠 폭 1200dp(글자 배율 반영) 미만에서는 연습 카드와 기록/설정 묶음을 세로로 배치한다. 기록 수·최근 기록·운전 경험·관심 상황은 저장된 실제 값을 사용한다. 시연 진입은 하단의 작은 텍스트 버튼으로 제공한다. 별도 장식 경로 그림과 카드 자체의 그라데이션은 추가하지 않는다. 원본의 물결 배경은 유지한다. 연습 단계는 3개의 얇은 진행 막대로 표시하고 접근성 설명을 제공한다. 기록에는 실제·시연 상태 배지를 유지하고, 목록 행으로 날짜·시간·동작을 정렬한다.
 
 모션 기준은 `ui/driving/DrivingMotion.kt`의 `ThriveMotion`과 `MotionMode`다. 추가 런타임 의존성은 없다.
 
@@ -151,3 +151,11 @@ Status bar·Driving view·GNB는 시스템 영역, Application window는 Thrive�
 프로필의 ‘화면 움직임 줄이기’는 기기에 저장한다. 켜면 이동·확대를 생략하고 100ms 페이드만 사용한다. 키보드 입력이나 시스템 애니메이션 배율 0에서는 즉시 상태를 반영한다. 배율 변경은 화면을 다시 열지 않아도 감지한다.
 
 프로필·음성 설정·리포트 느낌 저장의 완료 표시는 DataStore/DB 작업이 성공한 뒤에만 발행한다. 더 최근 요청이 있으면 앞 요청의 완료 표시를 버리고, 2.5초가 지난 완료 표시를 화면 재진입 때 다시 재생하지 않는다. 시각적으로는 체크만 표시하며 접근성의 polite live region으로 ‘저장 완료’를 알린다.
+
+### Practice curriculum implementation (2026-11-15)
+
+Figma sections `136:71252` and `137:71252` replace the legacy three-goal entry with 17 beginner and 14 returning-driver topics. Track selection persists in DataStore. Three-column browsing stacks on narrow content widths. Stationary topics require fresh P state; beginner road preparation requires companion confirmation. Destination, parking, and conditional night/rain topics have separate branches. Topic/course IDs persist through Room migration 4 to 5; progress counts unique completed topics. Removing the only completed record for a topic also removes its completion. Reports suggest the next topic or a shorter repeat based on the saved feeling.
+
+Conditional practice uses an explicit current-coordinate lookup against Open-Meteo, with a 30-minute freshness gate. Optional one-shot reminders check the saved area for up to seven days using Android JobScheduler; they do not track background location. System scheduling and network availability affect delivery time. Courses, places, and navigation remain explicitly labeled Figma examples.
+
+Validation: 65 unit tests passed; verification and regular APK builds passed. The user took over manual screen testing before the automated UI scenario completed. No full end-to-end UI pass is claimed.

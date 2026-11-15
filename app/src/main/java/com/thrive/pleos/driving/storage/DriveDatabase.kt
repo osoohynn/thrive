@@ -42,6 +42,8 @@ internal data class SavedDrive(
     @ColumnInfo(defaultValue = "0") val practiceReturn: Boolean = false,
     @ColumnInfo(defaultValue = "NULL") val practiceMaxMinutes: Int? = null,
     @ColumnInfo(defaultValue = "0") val droppedNavigationEvents: Int = 0,
+    @ColumnInfo(defaultValue = "NULL") val curriculumItemId: String? = null,
+    @ColumnInfo(defaultValue = "NULL") val curriculumCourseId: String? = null,
 )
 
 @Entity(tableName = "location_samples", foreignKeys = [ForeignKey(
@@ -174,7 +176,7 @@ internal abstract class DriveDao {
     abstract suspend fun deleteAllFinished(): Int
 }
 
-@Database(entities = [SavedDrive::class, SavedLocation::class, SavedNavigationEvent::class], version = 4, exportSchema = true)
+@Database(entities = [SavedDrive::class, SavedLocation::class, SavedNavigationEvent::class], version = 5, exportSchema = true)
 internal abstract class DriveDatabase : RoomDatabase() {
     abstract fun drives(): DriveDao
 
@@ -183,7 +185,7 @@ internal abstract class DriveDatabase : RoomDatabase() {
 
         fun get(context: Context): DriveDatabase = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(context.applicationContext, DriveDatabase::class.java, "driving.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { instance = it }
         }
     }
 }
@@ -222,5 +224,12 @@ internal val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("CREATE TABLE IF NOT EXISTS navigation_events (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, eventKey TEXT NOT NULL, sessionId TEXT NOT NULL, kind TEXT NOT NULL, source TEXT NOT NULL, elapsedMs INTEGER NOT NULL, receivedEpochMs INTEGER NOT NULL, detail TEXT NOT NULL, turnType TEXT, FOREIGN KEY(sessionId) REFERENCES drive_sessions(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_navigation_events_sessionId ON navigation_events(sessionId)")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_navigation_events_eventKey ON navigation_events(eventKey)")
+    }
+}
+
+internal val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE drive_sessions ADD COLUMN curriculumItemId TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE drive_sessions ADD COLUMN curriculumCourseId TEXT DEFAULT NULL")
     }
 }

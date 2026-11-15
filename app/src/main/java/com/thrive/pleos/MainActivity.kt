@@ -1,5 +1,6 @@
 package com.thrive.pleos
 
+import com.thrive.pleos.driving.curriculum.CURRICULUM_TOPIC_EXTRA
 import android.os.Bundle
 import android.content.Intent
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +40,9 @@ private val restOptions = listOf(
 )
 
 class MainActivity : ComponentActivity() {
+    private val mutableCurriculumTopic = MutableStateFlow<String?>(null)
+    internal val curriculumTopic = mutableCurriculumTopic.asStateFlow()
+    internal fun clearCurriculumTopic() { mutableCurriculumTopic.value = null; intent.removeExtra(CURRICULUM_TOPIC_EXTRA) }
     private val mutableInvitationToken = MutableStateFlow<String?>(null)
     internal val invitationToken = mutableInvitationToken.asStateFlow()
     internal fun clearInvitationToken(token: String) {
@@ -50,6 +54,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         mutableInvitationToken.value = intent.getStringExtra(INVITATION_EXTRA)
+        mutableCurriculumTopic.value = intent.getStringExtra(CURRICULUM_TOPIC_EXTRA)
     }
     override fun onStart() {
         super.onStart()
@@ -63,6 +68,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mutableInvitationToken.value = intent.getStringExtra(INVITATION_EXTRA)
+        mutableCurriculumTopic.value = intent.getStringExtra(CURRICULUM_TOPIC_EXTRA)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),

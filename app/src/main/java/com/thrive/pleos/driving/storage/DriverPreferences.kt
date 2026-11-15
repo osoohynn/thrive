@@ -19,6 +19,7 @@ internal data class DriverPreferences(
     val invitations: Boolean = false,
     val invitationHistory: Set<String> = emptySet(),
     val reducedMotion: Boolean = false,
+    val curriculumTrack: String? = null,
 )
 
 internal class DriverPreferencesStore(context: Context) {
@@ -26,6 +27,7 @@ internal class DriverPreferencesStore(context: Context) {
     private val experience = stringPreferencesKey("experience")
     private val concerns = stringSetPreferencesKey("concerns")
     private val voice = booleanPreferencesKey("voice")
+    private val curriculumTrack = stringPreferencesKey("curriculum_track")
     private val reducedMotion = booleanPreferencesKey("reduced_motion")
     private val invitations = booleanPreferencesKey("practice_invitations")
     private val invitationHistory = stringSetPreferencesKey("invitation_history")
@@ -37,6 +39,7 @@ internal class DriverPreferencesStore(context: Context) {
             values[invitations] ?: false,
             values[invitationHistory] ?: emptySet(),
             values[reducedMotion] ?: false,
+            values[curriculumTrack],
         )
     }
 
@@ -50,6 +53,7 @@ internal class DriverPreferencesStore(context: Context) {
         }
     }
 
+    suspend fun setCurriculumTrack(value: String) { store.edit { it[curriculumTrack] = value } }
     suspend fun setExperience(value: String) { store.edit { it[experience] = value } }
     suspend fun setReducedMotion(enabled: Boolean) { store.edit { it[reducedMotion] = enabled } }
     suspend fun setVoice(enabled: Boolean) { store.edit { it[voice] = enabled } }
