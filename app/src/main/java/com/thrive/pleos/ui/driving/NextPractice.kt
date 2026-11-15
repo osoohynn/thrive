@@ -1,6 +1,8 @@
 package com.thrive.pleos.ui.driving
 
+import com.thrive.pleos.driving.navigation.LiveDestination
 import com.thrive.pleos.driving.storage.SavedDrive
+import com.thrive.pleos.driving.storage.SavedNavigationEvent
 import com.thrive.pleos.driving.storage.SessionStatus
 
 internal val practiceTimeOptions = listOf(15, 30, 45)
@@ -15,6 +17,14 @@ internal sealed interface NextPracticePlan {
         override val reason: String,
     ) : NextPracticePlan
 
+    data class NativePractice(
+        val goal: PracticeGoal,
+        val maxMinutes: Int,
+        val stop: LiveDestination,
+        val roundTrip: Boolean,
+        override val reason: String,
+    ) : NextPracticePlan
+
     data class Destination(
         val name: String,
         val native: Boolean,
@@ -23,10 +33,35 @@ internal sealed interface NextPracticePlan {
 }
 
 /** Product policy based on the user's response, never a sensor-based skill assessment. */
-internal fun nextPracticePlan(record: SavedDrive): NextPracticePlan? {
+internal fun nextPracticePlan(record: SavedDrive, events: List<SavedNavigationEvent> = emptyList()): NextPracticePlan? {
+    val plan = baseNextPracticePlan(record) ?: return null
+    val context = navigationReviewContext(record, events) ?: return plan
+    val reason = "$context ${plan.reason}"
+    return when (plan) {
+        is NextPracticePlan.Practice -> plan.copy(reason = reason)
+        is NextPracticePlan.NativePractice -> plan.copy(reason = reason)
+        is NextPracticePlan.Destination -> plan.copy(reason = reason)
+    }
+}
+
+private fun baseNextPracticePlan(record: SavedDrive): NextPracticePlan? {
     if (record.status != SessionStatus.Completed.name || record.activeSlot != null) return null
     if (record.feeling !in drivingFeelings || record.source !in setOf("SDK", "DEMO")) return null
     val response = "‘${record.feeling}’라는 응답을 기준으로"
+    if (record.source == "SDK" && record.mode == DriveMode.Practice.name) {
+        val goal = PracticeGoal.entries.firstOrNull { it.name == record.goal }
+        val lat = record.practiceStopLatitude
+        val lon = record.practiceStopLongitude
+        val name = record.practiceStopName
+        if (goal != null && lat != null && lon != null && name != null) {
+            val stop = LiveDestination(name, lat, lon)
+            if (stop.valid) {
+                val budget = record.practiceMaxMinutes ?: 45
+                return NextPracticePlan.NativePractice(goal, if (record.feeling == "부담됐어요") minOf(budget, 30) else budget,
+                    stop, record.practiceReturn, "$response 같은 목표와 목적지를 다시 확인해요. 경로는 새로 계산해요.")
+            }
+        }
+    }
     if (record.source == "SDK" || record.mode == DriveMode.Destination.name) {
         if (record.destination.isBlank()) return null
         return NextPracticePlan.Destination(record.destination, record.source == "SDK",

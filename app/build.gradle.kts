@@ -8,19 +8,25 @@ plugins {
 android {
     namespace = "com.thrive.pleos"
     compileSdk = 35
+    useLibrary("android.car")
 
     defaultConfig {
         applicationId = "com.thrive.pleos"
+        manifestPlaceholders["thriveAppLabel"] = "@string/app_name"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+        testInstrumentationRunner = "com.thrive.pleos.driving.RecordingLifecycleChecks"
     }
 
     buildTypes {
         getByName("debug") {
             // Isolate emulator checks from the main app when another session is reviewing UI.
-            if (providers.gradleProperty("thriveVerification").isPresent) applicationIdSuffix = ".verification"
+            providers.gradleProperty("thriveVerification").orNull?.let { verification ->
+                applicationIdSuffix = if (verification == "figma") ".verification.figma" else ".verification"
+                manifestPlaceholders["thriveAppLabel"] = if (verification == "figma") "Thrive 디자인 검증" else "Thrive 검증용"
+            }
         }
     }
 

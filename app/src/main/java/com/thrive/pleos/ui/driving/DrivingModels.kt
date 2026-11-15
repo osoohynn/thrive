@@ -1,7 +1,7 @@
 package com.thrive.pleos.ui.driving
 
 internal enum class DemoScreen(val title: String) {
-    Home("홈"), Navigation("지도 연동 체험"), Practice("연습 목표"), Destination("목적지"),
+    Home("홈"), Navigation("운전하기"), Practice("연습 목표"), NativePractice("실제 연습 코스"), DemoNavigation("지도 연동 시연"), Destination("목적지"),
     Routes("코스 선택"), Brief("출발 준비"), Driving("주행 시연"), Report("주행 리포트"),
     History("주행 기록"), Profile("내 운전"),
 }
@@ -9,14 +9,14 @@ internal enum class DemoScreen(val title: String) {
 internal enum class DriveMode { Practice, Destination }
 
 internal enum class PracticeGoal(val title: String, val description: String, val mark: String) {
-    Turns("회전·교차로", "신호를 살피고, 차근차근 회전해요.", "01"),
-    Lanes("차선 변경 준비", "경로를 미리 보고 여유 있게 준비해요.", "02"),
-    Daily("생활 경로 적응", "자주 가야 할 목적지까지 익혀봐요.", "03"),
+    Turns("회전·교차로", "좌·우회전, 교차로 통과", "01"),
+    Lanes("차선 변경 준비", "차로 이동, 경로 변경", "02"),
+    Daily("생활 경로 적응", "자주 가는 목적지 경로", "03"),
 }
 
 internal enum class DemoRoute(val title: String, val minutes: Int, val kilometers: String, val laneChanges: Int) {
-    Gentle("차근차근 가는 길", 24, "6.8", 1),
-    Direct("조금 더 빠른 길", 19, "5.9", 3),
+    Gentle("변경 적은 코스", 24, "6.8", 1),
+    Direct("시간 짧은 코스", 19, "5.9", 3),
 }
 
 internal data class DemoTrip(

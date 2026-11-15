@@ -6,12 +6,16 @@ import org.junit.Test
 
 class LiveDestinationTest {
     private val destination = LiveDestination("테스트 목적지", 37.5, 127.0)
-    private fun ready() = NavigationState(connected = true, destination = destination, routeMode = "ROUTE_GUIDING", confirmedAtElapsedMs = 1000)
+    private fun ready() = NavigationState(connected = true, destination = destination, routeMode = "ROUTE_GUIDING", confirmedAtElapsedMs = 1000, routeConfirmedAtMs = 1000)
     @Test fun confirmedGuidanceAllowsRecording() { assertEquals(destination, ready().freshDestination(2000)) }
     @Test fun staleDestinationDoesNotAllowRecording() { assertNull(ready().freshDestination(32000)) }
     @Test fun noGuidanceOrDisconnectedDoesNotAllowRecording() {
         assertNull(ready().copy(routeMode = "SAFE_GUIDING").freshDestination(2000))
         assertNull(ready().copy(connected = false).freshDestination(2000))
+    }
+    @Test fun destinationResponseAloneDoesNotConfirmRouteState() {
+        assertNull(ready().copy(routeConfirmedAtMs = null).freshDestination(2000))
+        assertNull(ready().copy(routeConfirmedAtMs = -40_000).freshDestination(2000))
     }
     @Test fun emptyNameAndInvalidCoordinatesDoNotAllowRecording() {
         assertFalse(destination.copy(name = "").valid)

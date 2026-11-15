@@ -5,8 +5,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import com.thrive.pleos.driving.voice.VoiceState
 import com.thrive.pleos.ui.theme.*
 
@@ -24,19 +22,20 @@ internal fun VoiceGuidancePanel(
     onEnabled: (Boolean) -> Unit,
     onPlay: () -> Unit,
     onStop: () -> Unit,
+    compact: Boolean = false,
 ) {
-    ContentPanel("음성 학습 안내") {
-        Text(goal.voiceCue, style = MaterialTheme.typography.bodyLarge)
+    val body: @Composable ColumnScope.() -> Unit = {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ThriveSpace.Md)) {
-            Switch(checked = enabled, onCheckedChange = onEnabled,
-                modifier = Modifier.sizeIn(minWidth = ThriveSize.TouchTarget, minHeight = ThriveSize.TouchTarget)
-                    .semantics { contentDescription = "음성 학습 안내" })
+            ThriveToggle(enabled, onEnabled, "음성 학습 안내")
             Text(if (enabled) "안내 켜짐" else "안내 꺼짐", style = MaterialTheme.typography.labelLarge)
         }
-        Text(state.message, style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
+        if (state.phase != com.thrive.pleos.driving.voice.VoicePhase.Idle) Text(state.message, style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
         if (state.busy) SecondaryAction("안내 중단", onStop)
         else if (enabled) SecondaryAction("목표 안내 듣기", onPlay)
-        Text("버튼을 누를 때만 재생해요. 주변 상황을 감지한 길 안내는 아니에요. 다른 화면으로 이동하면 중단해요.",
+        if (!compact) SaveStatus("voice")
+        if (compact) Text("수동 재생 · 실제 길 안내 아님",
             style = MaterialTheme.typography.bodyMedium, color = ThriveColors.TextSecondary)
     }
+    if (compact) Column(verticalArrangement = Arrangement.spacedBy(ThriveSpace.Lg), content = body)
+    else ContentPanel("음성 학습 안내", content = body)
 }

@@ -1,0 +1,27 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="2400" height="1600" viewBox="0 0 2400 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="roads" clip-path="url(#clip0_0_21)">
+<path id="Vector" d="M0 100H2400" stroke-width="10" stroke="#1C3C52" stroke-opacity="0.4"/>
+<path id="Vector_2" d="M0 280H2400" stroke-width="18" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_3" d="M0 460H2400" stroke-width="10" stroke="#1C3C52" stroke-opacity="0.4"/>
+<path id="Vector_4" d="M0 640H2400" stroke-width="18" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_5" d="M0 820H2400" stroke-width="10" stroke="#1C3C52" stroke-opacity="0.4"/>
+<path id="Vector_6" d="M0 1000H2400" stroke-width="18" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_7" d="M0 1180H2400" stroke-width="10" stroke="#1C3C52" stroke-opacity="0.4"/>
+<path id="Vector_8" d="M0 1360H2400" stroke-width="18" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_9" d="M0 1540H2400" stroke-width="10" stroke="#1C3C52" stroke-opacity="0.4"/>
+<path id="Vector_10" d="M150 0V1600" stroke-width="10" stroke="#1C3C52" stroke-opacity="0.4"/>
+<path id="Vector_11" d="M420 0V1600" stroke-width="16" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_12" d="M700 0V1600" stroke-width="16" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_13" d="M960 0V1600" stroke-width="16" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_14" d="M1250 0V1600" stroke-width="10" stroke="#1C3C52" stroke-opacity="0.4"/>
+<path id="Vector_15" d="M1500 0V1600" stroke-width="16" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_16" d="M1800 0V1600" stroke-width="16" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_17" d="M2100 0V1600" stroke-width="16" stroke="#1C3C52" stroke-opacity="0.18"/>
+<path id="Vector_18" d="M0 1500L2400 200" stroke-width="18" stroke="#1C3C52" stroke-opacity="0.18"/>
+</g>
+<defs>
+<clipPath id="clip0_0_21">
+<rect width="2400" height="1600" fill="white"/>
+</clipPath>
+</defs>
+</svg>

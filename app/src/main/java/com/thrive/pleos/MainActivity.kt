@@ -1,6 +1,11 @@
 package com.thrive.pleos
 
 import android.os.Bundle
+import android.content.Intent
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import com.thrive.pleos.driving.invitation.PracticeInvitations
+import com.thrive.pleos.driving.invitation.INVITATION_EXTRA
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -34,11 +39,33 @@ private val restOptions = listOf(
 )
 
 class MainActivity : ComponentActivity() {
+    private val mutableInvitationToken = MutableStateFlow<String?>(null)
+    internal val invitationToken = mutableInvitationToken.asStateFlow()
+    internal fun clearInvitationToken(token: String) {
+        if (mutableInvitationToken.value != token) return
+        mutableInvitationToken.value = null
+        intent.removeExtra(INVITATION_EXTRA)
+    }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        mutableInvitationToken.value = intent.getStringExtra(INVITATION_EXTRA)
+    }
+    override fun onStart() {
+        super.onStart()
+        PracticeInvitations.get(this).activityStarted()
+    }
+    override fun onStop() {
+        PracticeInvitations.get(this).activityStopped()
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mutableInvitationToken.value = intent.getStringExtra(INVITATION_EXTRA)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
         )
         setContent { DrivingApp() }
     }
