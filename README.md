@@ -1,9 +1,124 @@
-# thrive · Pleos Connect
+# Thrive · Pleos Connect
 
-현대자동차그룹 차량용 앱 개발 공모전을 위한 Android Automotive 프로젝트.
-프로젝트와 폴더 이름은 `thrive`, 앱 이름은 `Thrive`입니다. 초보·장롱면허 운전자의 연습과 실제 목적지 주행을 연결하는 운전 적응 서비스를 개발합니다.
+> 현대자동차그룹 차량용 앱 개발 공모전 출품작 · 팀 코딩고딩
 
-GitHub 저장소: [osoohynn/thrive](https://github.com/osoohynn/thrive)
+## 앱 이름 및 한 줄 소개
+
+**Thrive(쓰라이브)** — 초보·장롱면허 운전자가 차량 화면에서 단계별 커리큘럼으로 연습 항목을 고르고, 출발 전 미리 익히고, 주행 중 필요한 순간에만 안내받고, 도착 후 평가 없이 돌아보며 다음 연습으로 이어가는 Pleos Connect 운전 적응 코치 앱입니다.
+
+| 항목 | 내용 |
+| --- | --- |
+| 앱 이름 | Thrive |
+| 패키지 | `com.thrive.pleos` |
+| 버전 | 0.1.0 (versionCode 1) |
+| 플랫폼 | Android Automotive · Pleos Connect (API 34) |
+| 저장소 | [osoohynn/thrive](https://github.com/osoohynn/thrive) |
+
+## APK 파일 위치
+
+| 구분 | 위치 |
+| --- | --- |
+| 제출용 release APK | [`apk/코딩고딩_Thrive_release.apk`](apk/) |
+| 용량 초과 시 | GitHub Releases 페이지 (업로드 후 링크 기재) |
+
+APK는 `팀명_앱이름_release.apk` 규칙에 따라 저장소의 `apk/` 폴더에 올립니다. 심사 기준 커밋 번호는 접수 메일에 함께 적습니다.
+
+## 실행 방법
+
+### 1. APK로 바로 실행
+
+1. 아래 [테스트 환경](#테스트-환경-및-필요한-설정)대로 Pleos Connect 에뮬레이터를 생성하고 실행합니다.
+2. 에뮬레이터가 켜진 상태에서 APK를 설치합니다.
+
+   ```sh
+   adb install -r apk/코딩고딩_Thrive_release.apk
+   ```
+
+3. 차량 런처의 앱 목록에서 **Thrive**를 실행합니다.
+
+### 2. 소스에서 빌드해 실행 (macOS · Apple Silicon)
+
+한 번에 설치·빌드·실행하려면 저장소 루트에서 다음 파일을 실행합니다.
+
+```sh
+./install-and-run.command
+```
+
+Homebrew → JDK 17 → Android SDK → 공식 Pleos API 34 ARM 시스템 이미지 → 가상 차량(`Thrive_Pleos`) 생성 → 빌드 → 에뮬레이터 부팅 → APK 설치·실행 순서로 진행합니다. SDK 라이선스는 실행 중에 직접 확인하고 동의합니다.
+
+도구가 이미 설치되어 있다면 개별 명령으로도 실행할 수 있습니다.
+
+```sh
+./scripts/android.sh setup              # 프로젝트 안 .tools에 Android SDK 설치
+./scripts/android.sh assembleDebug      # 빌드
+./scripts/android.sh run                # 실행 중인 에뮬레이터에 설치·실행
+```
+
+Android Studio에서는 이 폴더를 열고 Gradle JDK를 17로 지정한 뒤 `app` 구성을 Pleos 에뮬레이터에서 Run 합니다. 자세한 절차는 [Android Studio에서 열기와 실행](#android-studio에서-열기와-실행)을 참고하세요.
+
+### 3. 앱에서 확인할 흐름
+
+| 흐름 | 시작 위치 |
+| --- | --- |
+| 단계별 연습(초보자·장롱면허 커리큘럼) → 코스 → 출발 준비 → 주행 시연 → 리포트 → 다음 연습 | 홈 → **연습 코스 찾기** |
+| 목적지 연습 → 코스 비교 → 주행 → 리포트 | 홈 → **목적지 찾기** |
+| 실제 내비 목적지 조회(NaviHelper) → 동의 → 위치 기록(FusedLocation) → 리포트 | 홈 → **지도 연동 체험** |
+| 저장한 기록 열람·삭제 | 왼쪽 레일 → **주행 기록** |
+| 운전 단계·관심 상황 설정 | 왼쪽 레일 → **내 운전** |
+
+## 테스트 환경 및 필요한 설정
+
+| 항목 | 설정 |
+| --- | --- |
+| 개발 PC | macOS · Apple Silicon (arm64) |
+| JDK | 17 (Gradle 실행용, IDE 내장 JDK 25는 사용하지 않음) |
+| Gradle / AGP / Kotlin | 8.11.1 / 8.9.2 / 2.1.20 |
+| Android SDK | compileSdk 35 · targetSdk 34 · minSdk 28 · Build Tools 35.0.0 |
+| UI | Jetpack Compose · Material 3 |
+| 저장소 | Room(주행 기록) · DataStore(설정) — 기기 내부 저장, 서버 없음 |
+
+**Pleos SDK**
+
+| SDK | 버전 | 사용 기능 |
+| --- | --- | --- |
+| NaviHelper | 3.0.5 | 기본 내비 목적지·경로 상태 조회, 목적지 변경 이벤트 |
+| FusedLocation | 1.1.3 | 위치 기록·위치 기반 거리 추정 |
+| TextToSpeech | 3.3.1 | 온디바이스 한국어 목표 안내 |
+| Vehicle | 2.3.2 | 의존성 구성 (차량 신호 연동은 후속) |
+
+**필요한 설정**
+
+- Pleos Connect 시스템 이미지 저장소를 SDK Manager → SDK Update Sites에 추가합니다.
+
+  ```text
+  Name: Pleos Connect System Image
+  URL: https://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-arm64-sys-img.xml
+  ```
+
+- 앱이 처음 실제 기록을 시작할 때 **위치 권한**을 요청합니다. 허용해야 위치 기록·거리 추정이 동작합니다.
+- 실제 목적지 기록을 확인하려면 에뮬레이터의 기본 내비게이션에서 먼저 목적지를 설정합니다. 이동은 에뮬레이터의 GPS 모의 위치(Extended controls → Location)로 입력합니다.
+- 별도 계정·API 키·서버 설정은 필요 없습니다. 비밀 키와 서명 키는 저장소에 포함하지 않습니다.
+- 지도·코스·시연 주행 장면은 예시 데이터이며, 실제 길 안내는 기본 내비게이션이 담당합니다.
+
+## Pleos Connect 에뮬레이터 버전과 화면 규격
+
+| 항목 | 값 |
+| --- | --- |
+| 시스템 이미지 | Pleos Connect v2.1.0 APIs arm64 System Image (`system-images;android-34;pleos_car_emulator;arm64-v8a`) |
+| API 레벨 | 34 |
+| 기기 프로필 | Automotive → Pleos Connect (`Pleos_Connect_v2_0` 프로필로 생성) |
+| AVD 설정 | RAM 4 GB · Cold boot · GPU host/auto |
+| 전체 디스플레이 | 2560 × 1440 px · 160 dpi |
+| 앱 영역(단일 창) | 1700 × 1184 dp |
+| 앱 영역(분할 창) | 840 × 1184 dp |
+| 실측 앱 창 | 1658 × 1210 (에뮬레이터 실행 시 측정) |
+| 주요 확인 화면 | 단일 창 1700 기준 · 콘텐츠 폭 840/600dp 배치 |
+
+앱은 `android.hardware.type.automotive`를 요구하므로 Pleos(차량용) 에뮬레이터에서 실행해야 합니다. 시스템 상태바·Driving view·GNB는 앱 안에 복제하지 않습니다.
+
+---
+
+# 개발 상세
 
 ## 구성
 
@@ -88,7 +203,7 @@ Figma의 검색·채팅 기능은 가져오지 않았으며 기존 휴식 선택
 Finder에서 `install-and-run.command`를 더블클릭하세요.
 
 ```sh
-cd /Users/suhyun/IdeaProjects/thrive
+cd thrive   # 저장소를 받은 폴더
 ./install-and-run.command
 ```
 
@@ -109,7 +224,7 @@ IntelliJ 내장 JDK는 25여서 이 프로젝트의 Gradle 실행에 사용하�
 네트워크가 가능한 일반 터미널에서:
 
 ```sh
-cd /Users/suhyun/IdeaProjects/thrive
+cd thrive   # 저장소를 받은 폴더
 brew install openjdk@17
 ./scripts/android.sh setup
 ./scripts/android.sh assembleDebug lintDebug
