@@ -18,8 +18,8 @@
 
 | 구분 | 위치 |
 | --- | --- |
-| 제출용 release APK | [`apk/코딩고딩_Thrive_release.apk`](apk/) |
-| 용량 초과 시 | GitHub Releases 페이지 (업로드 후 링크 기재) |
+| 제출용 release APK | [`apk/코딩고딩_Thrive_release.apk`](apk/코딩고딩_Thrive_release.apk) |
+| GitHub Release | [v0.1.0](https://github.com/osoohynn/thrive/releases/tag/v0.1.0) (같은 파일, `Thrive_release.apk`) |
 
 APK는 `팀명_앱이름_release.apk` 규칙에 따라 저장소의 `apk/` 폴더에 올립니다. 심사 기준 커밋 번호는 접수 메일에 함께 적습니다.
 
